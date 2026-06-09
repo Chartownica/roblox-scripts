@@ -5,48 +5,40 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-
 local player = Players.LocalPlayer
 local playerGui = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui")
-
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:FindFirstChildOfClass("Humanoid")
 local rootPart = character:FindFirstChild("HumanoidRootPart")
 local camera = workspace.CurrentCamera
-
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
     humanoid = newChar:WaitForChild("Humanoid", 5)
     rootPart = newChar:WaitForChild("HumanoidRootPart", 5)
 end)
-
 if playerGui:FindFirstChild("FlyUI") then
     playerGui.FlyUI:Destroy()
 end
-
 --------------------------------------------
 -- ПЕРЕМЕННЫЕ НАСТРОЕК
 --------------------------------------------
 local matchMenuColor = false
-local matchStatsColor = false 
+local matchStatsColor = false
+local matchOverlayColor = false
 local currentMenuColor = Color3.fromRGB(30, 30, 30)
 local accentColor = Color3.fromRGB(100, 100, 255)
-local menuTransparency = 0.25 
-
+local menuTransparency = 0.25
 local flyKey = Enum.KeyCode.F
 local noclipKey = Enum.KeyCode.N
-
 local isListeningFly = false
 local isListeningNoclip = false
-
 -- Визуалы
 local fpsEnabled = false
 local fpsCurrentSize = 14
 local minFpsSize = 8
 local maxFpsSize = 72
-
 local keystrokesEnabled = false
-
+local keysScale = 1.0
 --------------------------------------------
 -- 1. СОЗДАНИЕ КАРКАСА GUI
 --------------------------------------------
@@ -54,7 +46,6 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "FlyUI"
 gui.ResetOnSpawn = false
 gui.Parent = playerGui
-
 local frame = Instance.new("Frame")
 frame.Name = "MainFrame"
 frame.Size = UDim2.new(0, 0, 0, 0) 
@@ -64,11 +55,9 @@ frame.BackgroundColor3 = currentMenuColor
 frame.BackgroundTransparency = 1 
 frame.ClipsDescendants = true
 frame.Parent = gui
-
 local uicorner = Instance.new("UICorner")
 uicorner.CornerRadius = UDim.new(0, 6)
 uicorner.Parent = frame
-
 local waterMark = Instance.new("TextLabel")
 waterMark.Size = UDim2.new(0, 100, 0, 15)
 waterMark.Position = UDim2.new(0, 12, 1, -15)
@@ -80,7 +69,6 @@ waterMark.Font = Enum.Font.SourceSansItalic
 waterMark.TextXAlignment = Enum.TextXAlignment.Left
 waterMark.ZIndex = 4
 waterMark.Parent = frame
-
 local dragBar = Instance.new("TextButton")
 dragBar.Name = "DragBar"
 dragBar.Size = UDim2.new(0, 60, 0, 20)
@@ -92,7 +80,6 @@ dragBar.TextSize = 11
 dragBar.Font = Enum.Font.SourceSansBold
 dragBar.Parent = frame
 Instance.new("UICorner", dragBar).CornerRadius = UDim.new(0, 4)
-
 local mainTabButton = Instance.new("TextButton")
 mainTabButton.Size = UDim2.new(0, 28, 0, 20)
 mainTabButton.Position = UDim2.new(0, 75, 0, 8)
@@ -103,7 +90,6 @@ mainTabButton.TextSize = 10
 mainTabButton.Font = Enum.Font.SourceSansBold
 mainTabButton.Parent = frame
 Instance.new("UICorner", mainTabButton).CornerRadius = UDim.new(0, 4)
-
 local tpTabButton = Instance.new("TextButton")
 tpTabButton.Size = UDim2.new(0, 20, 0, 20)
 tpTabButton.Position = UDim2.new(0, 107, 0, 8)
@@ -114,7 +100,6 @@ tpTabButton.TextSize = 10
 tpTabButton.Font = Enum.Font.SourceSansBold
 tpTabButton.Parent = frame
 Instance.new("UICorner", tpTabButton).CornerRadius = UDim.new(0, 4)
-
 local visualTabButton = Instance.new("TextButton")
 visualTabButton.Size = UDim2.new(0, 22, 0, 20)
 visualTabButton.Position = UDim2.new(0, 131, 0, 8)
@@ -125,7 +110,6 @@ visualTabButton.TextSize = 10
 visualTabButton.Font = Enum.Font.SourceSansBold
 visualTabButton.Parent = frame
 Instance.new("UICorner", visualTabButton).CornerRadius = UDim.new(0, 4)
-
 local settingsButton = Instance.new("TextButton")
 settingsButton.Size = UDim2.new(0, 24, 0, 20)
 settingsButton.Position = UDim2.new(0, 157, 0, 8)
@@ -136,7 +120,6 @@ settingsButton.TextSize = 10
 settingsButton.Font = Enum.Font.SourceSansBold
 settingsButton.Parent = frame
 Instance.new("UICorner", settingsButton).CornerRadius = UDim.new(0, 4)
-
 local minimizeButton = Instance.new("TextButton")
 minimizeButton.Size = UDim2.new(0, 16, 0, 16)
 minimizeButton.Position = UDim2.new(1, -22, 0, 10)
@@ -146,7 +129,6 @@ minimizeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 minimizeButton.TextSize = 12
 minimizeButton.Parent = frame
 Instance.new("UICorner", minimizeButton).CornerRadius = UDim.new(0, 4)
-
 --------------------------------------------
 -- 2. СОЗДАНИЕ СТРАНИЦ КОНТЕНТА
 --------------------------------------------
@@ -158,12 +140,10 @@ mainContainer.Position = UDim2.new(0, 10, 0, 36)
 mainContainer.BackgroundTransparency = 1
 mainContainer.Visible = true
 mainContainer.Parent = frame
-
 local mainLayout = Instance.new("UIListLayout")
 mainLayout.SortOrder = Enum.SortOrder.LayoutOrder
 mainLayout.Padding = UDim.new(0, 6)
 mainLayout.Parent = mainContainer
-
 local flyButton = Instance.new("TextButton")
 flyButton.Size = UDim2.new(1, 0, 0, 26)
 flyButton.Text = "Fly: OFF [" .. flyKey.Name .. "]"
@@ -173,7 +153,6 @@ flyButton.TextSize = 13
 flyButton.LayoutOrder = 1
 flyButton.Parent = mainContainer
 Instance.new("UICorner", flyButton).CornerRadius = UDim.new(0, 4)
-
 local noClipButton = Instance.new("TextButton")
 noClipButton.Size = UDim2.new(1, 0, 0, 26)
 noClipButton.Text = "No-Clip: OFF [" .. noclipKey.Name .. "]"
@@ -183,13 +162,11 @@ noClipButton.TextSize = 13
 noClipButton.LayoutOrder = 2
 noClipButton.Parent = mainContainer
 Instance.new("UICorner", noClipButton).CornerRadius = UDim.new(0, 4)
-
 local speedSliderContainer = Instance.new("Frame")
 speedSliderContainer.Size = UDim2.new(1, 0, 0, 30)
 speedSliderContainer.BackgroundTransparency = 1
 speedSliderContainer.LayoutOrder = 3
 speedSliderContainer.Parent = mainContainer
-
 local speedLabel = Instance.new("TextLabel")
 speedLabel.Size = UDim2.new(1, 0, 0, 12)
 speedLabel.Text = "Speed: 50"
@@ -197,20 +174,17 @@ speedLabel.BackgroundTransparency = 1
 speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 speedLabel.TextSize = 11
 speedLabel.Parent = speedSliderContainer
-
 local speedSliderFrame = Instance.new("Frame")
 speedSliderFrame.Size = UDim2.new(1, 0, 0, 6)
 speedSliderFrame.Position = UDim2.new(0, 0, 0, 16)
 speedSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 speedSliderFrame.Parent = speedSliderContainer
 Instance.new("UICorner", speedSliderFrame).CornerRadius = UDim.new(0, 3)
-
 local speedSliderFill = Instance.new("Frame")
 speedSliderFill.Size = UDim2.new(0.23, 0, 1, 0)
 speedSliderFill.BackgroundColor3 = accentColor
 speedSliderFill.Parent = speedSliderFrame
 Instance.new("UICorner", speedSliderFill).CornerRadius = UDim.new(0, 3)
-
 -- Вкладка TP
 local tpContainer = Instance.new("ScrollingFrame")
 tpContainer.Name = "TpTab"
@@ -222,99 +196,12 @@ tpContainer.ScrollBarThickness = 2
 tpContainer.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
 tpContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 tpContainer.Parent = frame
-
 local tpLayout = Instance.new("UIListLayout")
 tpLayout.SortOrder = Enum.SortOrder.Name
 tpLayout.Padding = UDim.new(0, 4)
 tpLayout.Parent = tpContainer
-
 -- Вкладка VISUAL
---[[
-    Modified: Added Keystrokes Scale Slider in Visuals Tab
-]]
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-
-local player = Players.LocalPlayer
-local playerGui = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui")
-local camera = workspace.CurrentCamera
-
--- Параметры оверлея
-local keystrokesEnabled = false
-local keysScale = 1.0
-
--- (Весь остальной код инициализации GUI...)
-
---------------------------------------------
--- Вкладка VISUALS (Интеграция слайдера)
---------------------------------------------
--- ... (код создания visualContainer)
-
--- Слайдер масштаба клавиш
-local keysScaleContainer = Instance.new("Frame", visualContainer)
-keysScaleContainer.Size = UDim2.new(1, -5, 0, 30)
-keysScaleContainer.BackgroundTransparency = 1
-keysScaleContainer.LayoutOrder = 5 -- Сразу после остальных настроек
-
-local keysScaleLabel = Instance.new("TextLabel", keysScaleContainer)
-keysScaleLabel.Size = UDim2.new(1, 0, 0, 12)
-keysScaleLabel.Text = "Keys Scale: 1.0x"
-keysScaleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-keysScaleLabel.BackgroundTransparency = 1
-keysScaleLabel.TextSize = 11
-
-local keysScaleSlider = Instance.new("Frame", keysScaleContainer)
-keysScaleSlider.Size = UDim2.new(1, 0, 0, 6)
-keysScaleSlider.Position = UDim2.new(0, 0, 0, 16)
-keysScaleSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-Instance.new("UICorner", keysScaleSlider).CornerRadius = UDim.new(0, 3)
-
-local keysScaleFill = Instance.new("Frame", keysScaleSlider)
-keysScaleFill.Size = UDim2.new(0.33, 0, 1, 0)
-keysScaleFill.BackgroundColor3 = accentColor
-Instance.new("UICorner", keysScaleFill).CornerRadius = UDim.new(0, 3)
-
--- Логика обновления масштаба
-local function updateKeysScale(input)
-    local sliderPos = keysScaleSlider.AbsolutePosition.X
-    local sliderSize = keysScaleSlider.AbsoluteSize.X
-    local rel = math.clamp((input.Position.X - sliderPos) / sliderSize, 0, 1)
-    
-    keysScale = 0.5 + (rel * 1.5) -- Диапазон от 0.5x до 2.0x
-    keysScaleLabel.Text = "Keys Scale: " .. string.format("%.1f", keysScale) .. "x"
-    keysScaleFill.Size = UDim2.new(rel, 0, 1, 0)
-    
-    -- Применяем масштаб к оверлею
-    keysFrame.Size = UDim2.new(0, 75 * keysScale, 0, 75 * keysScale)
-    for _, tile in pairs(keysFrame:GetChildren()) do
-        if tile:IsA("TextLabel") then
-            tile.TextSize = 12 * keysScale
-        end
-    end
-end
-
-keysScaleSlider.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        updateKeysScale(input)
-        local connection
-        connection = RunService.RenderStepped:Connect(function()
-            local mouse = UserInputService:GetMouseLocation()
-            local rel = math.clamp((mouse.X - keysScaleSlider.AbsolutePosition.X) / keysScaleSlider.AbsoluteSize.X, 0, 1)
-            keysScale = 0.5 + (rel * 1.5)
-            keysScaleLabel.Text = "Keys Scale: " .. string.format("%.1f", keysScale) .. "x"
-            keysScaleFill.Size = UDim2.new(rel, 0, 1, 0)
-            keysFrame.Size = UDim2.new(0, 75 * keysScale, 0, 75 * keysScale)
-            for _, tile in pairs(keysFrame:GetChildren()) do
-                if tile:IsA("TextLabel") then tile.TextSize = 12 * keysScale end
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(i) 
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then connection:Disconnect() end 
-        end)
-    end
-end)local visualContainer = Instance.new("ScrollingFrame")
+local visualContainer = Instance.new("ScrollingFrame")
 visualContainer.Name = "VisTab"
 visualContainer.Size = UDim2.new(1, -20, 1, -50)
 visualContainer.Position = UDim2.new(0, 10, 0, 36)
@@ -322,14 +209,12 @@ visualContainer.BackgroundTransparency = 1
 visualContainer.Visible = false
 visualContainer.ScrollBarThickness = 2
 visualContainer.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
-visualContainer.CanvasSize = UDim2.new(0, 0, 0, 180)
+visualContainer.CanvasSize = UDim2.new(0, 0, 0, 300)
 visualContainer.Parent = frame
-
 local visualLayout = Instance.new("UIListLayout")
 visualLayout.SortOrder = Enum.SortOrder.LayoutOrder
 visualLayout.Padding = UDim.new(0, 6)
 visualLayout.Parent = visualContainer
-
 local fpsToggleButton = Instance.new("TextButton")
 fpsToggleButton.Size = UDim2.new(1, -5, 0, 26)
 fpsToggleButton.Text = "Show FPS: OFF"
@@ -339,13 +224,11 @@ fpsToggleButton.TextSize = 13
 fpsToggleButton.LayoutOrder = 1
 fpsToggleButton.Parent = visualContainer
 Instance.new("UICorner", fpsToggleButton).CornerRadius = UDim.new(0, 4)
-
 local fpsSizeContainer = Instance.new("Frame")
 fpsSizeContainer.Size = UDim2.new(1, -5, 0, 30)
 fpsSizeContainer.BackgroundTransparency = 1
 fpsSizeContainer.LayoutOrder = 2
 fpsSizeContainer.Parent = visualContainer
-
 local fpsSizeLabel = Instance.new("TextLabel")
 fpsSizeLabel.Size = UDim2.new(1, 0, 0, 12)
 fpsSizeLabel.Text = "FPS Size: 14"
@@ -353,21 +236,18 @@ fpsSizeLabel.BackgroundTransparency = 1
 fpsSizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 fpsSizeLabel.TextSize = 11
 fpsSizeLabel.Parent = fpsSizeContainer
-
 local fpsSizeSliderFrame = Instance.new("Frame")
 fpsSizeSliderFrame.Size = UDim2.new(1, 0, 0, 6)
 fpsSizeSliderFrame.Position = UDim2.new(0, 0, 0, 16)
 fpsSizeSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 fpsSizeSliderFrame.Parent = fpsSizeContainer
 Instance.new("UICorner", fpsSizeSliderFrame).CornerRadius = UDim.new(0, 3)
-
 local fpsSizeSliderFill = Instance.new("Frame")
 local initialScale = (fpsCurrentSize - minFpsSize) / (maxFpsSize - minFpsSize)
 fpsSizeSliderFill.Size = UDim2.new(initialScale, 0, 1, 0)
 fpsSizeSliderFill.BackgroundColor3 = accentColor
 fpsSizeSliderFill.Parent = fpsSizeSliderFrame
 Instance.new("UICorner", fpsSizeSliderFill).CornerRadius = UDim.new(0, 3)
-
 -- КНОПКА ДЛЯ КЕЙБОРД-ОВЕРЛЕЯ
 local keysToggleButton = Instance.new("TextButton")
 keysToggleButton.Size = UDim2.new(1, -5, 0, 26)
@@ -378,17 +258,48 @@ keysToggleButton.TextSize = 13
 keysToggleButton.LayoutOrder = 3
 keysToggleButton.Parent = visualContainer
 Instance.new("UICorner", keysToggleButton).CornerRadius = UDim.new(0, 4)
-
+-- Слайдер масштаба клавиш
+local keysScaleContainer = Instance.new("Frame")
+keysScaleContainer.Size = UDim2.new(1, -5, 0, 30)
+keysScaleContainer.BackgroundTransparency = 1
+keysScaleContainer.LayoutOrder = 4
+keysScaleContainer.Parent = visualContainer
+local keysScaleLabel = Instance.new("TextLabel")
+keysScaleLabel.Size = UDim2.new(1, 0, 0, 12)
+keysScaleLabel.Text = "Keys Scale: 1.0x"
+keysScaleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+keysScaleLabel.BackgroundTransparency = 1
+keysScaleLabel.TextSize = 11
+keysScaleLabel.Parent = keysScaleContainer
+local keysScaleSliderFrame = Instance.new("Frame")
+keysScaleSliderFrame.Size = UDim2.new(1, 0, 0, 6)
+keysScaleSliderFrame.Position = UDim2.new(0, 0, 0, 16)
+keysScaleSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+keysScaleSliderFrame.Parent = keysScaleContainer
+Instance.new("UICorner", keysScaleSliderFrame).CornerRadius = UDim.new(0, 3)
+local keysScaleSliderFill = Instance.new("Frame")
+keysScaleSliderFill.Size = UDim2.new(0.333, 0, 1, 0)
+keysScaleSliderFill.BackgroundColor3 = accentColor
+keysScaleSliderFill.Parent = keysScaleSliderFrame
+Instance.new("UICorner", keysScaleSliderFill).CornerRadius = UDim.new(0, 3)
+local matchOverlayButton = Instance.new("TextButton")
+matchOverlayButton.Size = UDim2.new(1, -5, 0, 26)
+matchOverlayButton.Text = "Match Menu Color: OFF"
+matchOverlayButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+matchOverlayButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+matchOverlayButton.TextSize = 13
+matchOverlayButton.LayoutOrder = 5
+matchOverlayButton.Parent = visualContainer
+Instance.new("UICorner", matchOverlayButton).CornerRadius = UDim.new(0, 4)
 local matchStatsButton = Instance.new("TextButton")
 matchStatsButton.Size = UDim2.new(1, -5, 0, 26)
 matchStatsButton.Text = "Match Menu Color: OFF"
 matchStatsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 matchStatsButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 matchStatsButton.TextSize = 12
-matchStatsButton.LayoutOrder = 4
+matchStatsButton.LayoutOrder = 6
 matchStatsButton.Parent = visualContainer
 Instance.new("UICorner", matchStatsButton).CornerRadius = UDim.new(0, 4)
-
 -- Вкладка SETTINGS
 local settingsContainer = Instance.new("ScrollingFrame")
 settingsContainer.Name = "SetTab"
@@ -400,12 +311,10 @@ settingsContainer.ScrollBarThickness = 2
 settingsContainer.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
 settingsContainer.CanvasSize = UDim2.new(0, 0, 0, 300)
 settingsContainer.Parent = frame
-
 local settingsLayout = Instance.new("UIListLayout")
 settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 settingsLayout.Padding = UDim.new(0, 6)
 settingsLayout.Parent = settingsContainer
-
 local colorLabel = Instance.new("TextLabel")
 colorLabel.Size = UDim2.new(1, 0, 0, 14)
 colorLabel.Text = "Custom Menu Color Picker:"
@@ -416,14 +325,12 @@ colorLabel.TextXAlignment = Enum.TextXAlignment.Left
 colorLabel.BackgroundTransparency = 1
 colorLabel.LayoutOrder = 1
 colorLabel.Parent = settingsContainer
-
 local colorPickerFrame = Instance.new("Frame")
 colorPickerFrame.Size = UDim2.new(1, -5, 0, 85)
 colorPickerFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 colorPickerFrame.LayoutOrder = 2
 colorPickerFrame.Parent = settingsContainer
 Instance.new("UICorner", colorPickerFrame).CornerRadius = UDim.new(0, 4)
-
 local hueGradient = Instance.new("UIGradient")
 hueGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
@@ -435,14 +342,12 @@ hueGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
 })
 hueGradient.Parent = colorPickerFrame
-
 local SaturationOverlay = Instance.new("Frame")
 SaturationOverlay.Size = UDim2.new(1, 0, 1, 0)
 SaturationOverlay.BackgroundTransparency = 0
 SaturationOverlay.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SaturationOverlay.Parent = colorPickerFrame
 Instance.new("UICorner", SaturationOverlay).CornerRadius = UDim.new(0, 4)
-
 local satGradient = Instance.new("UIGradient")
 satGradient.Rotation = 90
 satGradient.Transparency = NumberSequence.new({
@@ -450,7 +355,6 @@ satGradient.Transparency = NumberSequence.new({
     NumberSequenceKeypoint.new(1, 0)
 })
 satGradient.Parent = SaturationOverlay
-
 local pickerSelection = Instance.new("Frame")
 pickerSelection.Size = UDim2.new(0, 8, 0, 8)
 pickerSelection.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -462,13 +366,11 @@ Instance.new("UICorner", pickerSelection).CornerRadius = UDim.new(1, 0)
 local psStroke = Instance.new("UIStroke", pickerSelection)
 psStroke.Color = Color3.fromRGB(0, 0, 0)
 psStroke.Thickness = 1
-
 local transContainer = Instance.new("Frame")
 transContainer.Size = UDim2.new(1, 0, 0, 30)
 transContainer.BackgroundTransparency = 1
 transContainer.LayoutOrder = 3
 transContainer.Parent = settingsContainer
-
 local transLabel = Instance.new("TextLabel")
 transLabel.Size = UDim2.new(1, 0, 0, 12)
 transLabel.Text = "Menu Transparency: 25%"
@@ -477,26 +379,22 @@ transLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 transLabel.TextSize = 11
 transLabel.TextXAlignment = Enum.TextXAlignment.Left
 transLabel.Parent = transContainer
-
 local transSliderFrame = Instance.new("Frame")
 transSliderFrame.Size = UDim2.new(1, -5, 0, 6)
 transSliderFrame.Position = UDim2.new(0, 0, 0, 16)
 transSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 transSliderFrame.Parent = transContainer
 Instance.new("UICorner", transSliderFrame).CornerRadius = UDim.new(0, 3)
-
 local transFill = Instance.new("Frame")
 transFill.Size = UDim2.new(0.277, 0, 1, 0)
 transFill.BackgroundColor3 = accentColor
 transFill.Parent = transSliderFrame
 Instance.new("UICorner", transFill).CornerRadius = UDim.new(0, 3)
-
 local matchContainer = Instance.new("Frame")
 matchContainer.Size = UDim2.new(1, 0, 0, 24)
 matchContainer.BackgroundTransparency = 1
 matchContainer.LayoutOrder = 4
 matchContainer.Parent = settingsContainer
-
 local matchToggle = Instance.new("TextButton")
 matchToggle.Size = UDim2.new(1, -5, 1, 0)
 matchToggle.Text = "Match Menu Color: OFF"
@@ -505,7 +403,6 @@ matchToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 matchToggle.TextSize = 11
 matchToggle.Parent = matchContainer
 Instance.new("UICorner", matchToggle).CornerRadius = UDim.new(0, 4)
-
 local bindLabel = Instance.new("TextLabel")
 bindLabel.Size = UDim2.new(1, 0, 0, 14)
 bindLabel.Text = "Keybind Settings:"
@@ -516,7 +413,6 @@ bindLabel.TextXAlignment = Enum.TextXAlignment.Left
 bindLabel.BackgroundTransparency = 1
 bindLabel.LayoutOrder = 5
 bindLabel.Parent = settingsContainer
-
 local flyBindButton = Instance.new("TextButton")
 flyBindButton.Size = UDim2.new(1, -5, 0, 24)
 flyBindButton.Text = "Bind Fly: " .. flyKey.Name
@@ -526,7 +422,6 @@ flyBindButton.TextSize = 11
 flyBindButton.LayoutOrder = 6
 flyBindButton.Parent = settingsContainer
 Instance.new("UICorner", flyBindButton).CornerRadius = UDim.new(0, 4)
-
 local noclipBindButton = Instance.new("TextButton")
 noclipBindButton.Size = UDim2.new(1, -5, 0, 24)
 noclipBindButton.Text = "Bind Noclip: " .. noclipKey.Name
@@ -536,7 +431,6 @@ noclipBindButton.TextSize = 11
 noclipBindButton.LayoutOrder = 7
 noclipBindButton.Parent = settingsContainer
 Instance.new("UICorner", noclipBindButton).CornerRadius = UDim.new(0, 4)
-
 local infoText = Instance.new("TextLabel")
 infoText.Size = UDim2.new(1, 0, 0, 30)
 infoText.Text = "Change bindings by clicking buttons above."
@@ -545,7 +439,6 @@ infoText.TextSize = 11
 infoText.BackgroundTransparency = 1
 infoText.LayoutOrder = 8
 infoText.Parent = settingsContainer
-
 --------------------------------------------
 -- 3. СОЗДАНИЕ ВНЕШНИХ ОВЕРЛЕЕВ (FPS)
 --------------------------------------------
@@ -562,11 +455,10 @@ fpsTextLabel.TextXAlignment = Enum.TextXAlignment.Left
 fpsTextLabel.Visible = false
 fpsTextLabel.Parent = gui
 Instance.new("UIStroke", fpsTextLabel).Color = Color3.fromRGB(0, 0, 0)
-
 --------------------------------------------
 -- СОЗДАНИЕ ОВЕРЛЕЯ НАЖАТИЯ КЛАВИШ (KEYSTROKES)
 --------------------------------------------
-local keysFrame = Instance.new("TextButton") -- Используем TextButton для драга всей панели
+local keysFrame = Instance.new("TextButton")
 keysFrame.Name = "KeystrokesFrame"
 keysFrame.Size = UDim2.new(0, 75, 0, 75)
 keysFrame.Position = UDim2.new(0, 10, 0, 50)
@@ -574,11 +466,10 @@ keysFrame.BackgroundTransparency = 1
 keysFrame.Text = ""
 keysFrame.Visible = false
 keysFrame.Parent = gui
-
-local function createKeyTile(name, txt, size, pos)
+local function createKeyTile(name, txt, baseSizeX, baseSizeY, pos)
     local tile = Instance.new("TextLabel")
     tile.Name = name
-    tile.Size = size
+    tile.Size = UDim2.new(0, baseSizeX, 0, baseSizeY)
     tile.Position = pos
     tile.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     tile.BackgroundTransparency = 0.3
@@ -591,24 +482,54 @@ local function createKeyTile(name, txt, size, pos)
     Instance.new("UIStroke", tile).Color = Color3.fromRGB(0, 0, 0)
     return tile
 end
-
--- Плитки клавиш (стиль со скриншота)
-local tileW = createKeyTile("W", "W", UDim2.new(0, 23, 0, 23), UDim2.new(0, 26, 0, 0))
-local tileA = createKeyTile("A", "A", UDim2.new(0, 23, 0, 23), UDim2.new(0, 0, 0, 25))
-local tileS = createKeyTile("S", "S", UDim2.new(0, 23, 0, 23), UDim2.new(0, 26, 0, 25))
-local tileD = createKeyTile("D", "D", UDim2.new(0, 23, 0, 23), UDim2.new(0, 52, 0, 25))
-local tileLMB = createKeyTile("LMB", "LMB", UDim2.new(0, 36, 0, 18), UDim2.new(0, 0, 0, 50))
-local tileRMB = createKeyTile("RMB", "RMB", UDim2.new(0, 36, 0, 18), UDim2.new(0, 39, 0, 50))
-local tileSpace = createKeyTile("Space", "_______", UDim2.new(0, 75, 0, 10), UDim2.new(0, 0, 0, 70))
+local tileW = createKeyTile("W", "W", 23, 23, UDim2.new(0, 26, 0, 0))
+local tileA = createKeyTile("A", "A", 23, 23, UDim2.new(0, 0, 0, 25))
+local tileS = createKeyTile("S", "S", 23, 23, UDim2.new(0, 26, 0, 25))
+local tileD = createKeyTile("D", "D", 23, 23, UDim2.new(0, 52, 0, 25))
+local tileLMB = createKeyTile("LMB", "LMB", 36, 18, UDim2.new(0, 0, 0, 50))
+local tileRMB = createKeyTile("RMB", "RMB", 36, 18, UDim2.new(0, 39, 0, 50))
+local tileSpace = createKeyTile("Space", "_______", 75, 10, UDim2.new(0, 0, 0, 70))
 tileSpace.TextSize = 8
-
+local function applyKeysScale()
+    local baseWidth = 75 * keysScale
+    local baseHeight = 75 * keysScale
+    keysFrame.Size = UDim2.new(0, baseWidth, 0, baseHeight)
+    
+    tileW.Size = UDim2.new(0, 23 * keysScale, 0, 23 * keysScale)
+    tileW.Position = UDim2.new(0, 26 * keysScale, 0, 0)
+    tileW.TextSize = 12 * keysScale
+    
+    tileA.Size = UDim2.new(0, 23 * keysScale, 0, 23 * keysScale)
+    tileA.Position = UDim2.new(0, 0, 0, 25 * keysScale)
+    tileA.TextSize = 12 * keysScale
+    
+    tileS.Size = UDim2.new(0, 23 * keysScale, 0, 23 * keysScale)
+    tileS.Position = UDim2.new(0, 26 * keysScale, 0, 25 * keysScale)
+    tileS.TextSize = 12 * keysScale
+    
+    tileD.Size = UDim2.new(0, 23 * keysScale, 0, 23 * keysScale)
+    tileD.Position = UDim2.new(0, 52 * keysScale, 0, 25 * keysScale)
+    tileD.TextSize = 12 * keysScale
+    
+    tileLMB.Size = UDim2.new(0, 36 * keysScale, 0, 18 * keysScale)
+    tileLMB.Position = UDim2.new(0, 0, 0, 50 * keysScale)
+    tileLMB.TextSize = 10 * keysScale
+    
+    tileRMB.Size = UDim2.new(0, 36 * keysScale, 0, 18 * keysScale)
+    tileRMB.Position = UDim2.new(0, 39 * keysScale, 0, 50 * keysScale)
+    tileRMB.TextSize = 10 * keysScale
+    
+    tileSpace.Size = UDim2.new(0, 75 * keysScale, 0, 10 * keysScale)
+    tileSpace.Position = UDim2.new(0, 0, 0, 70 * keysScale)
+    tileSpace.TextSize = 8 * keysScale
+end
+applyKeysScale()
 --------------------------------------------
 -- 4. ФУНКЦИЯ ОБНОВЛЕНИЯ ЦВЕТОВ
 --------------------------------------------
 local isFlying = false
 local Clip = true
 local isMinimized = false
-
 local function updateUIColors()
     frame.BackgroundColor3 = currentMenuColor
     if not isMinimized then
@@ -623,7 +544,9 @@ local function updateUIColors()
     fpsToggleButton.BackgroundColor3 = fpsEnabled and currentAccent or Color3.fromRGB(45, 45, 45)
     fpsSizeSliderFill.BackgroundColor3 = currentAccent
     keysToggleButton.BackgroundColor3 = keystrokesEnabled and currentAccent or Color3.fromRGB(45, 45, 45)
+    matchOverlayButton.BackgroundColor3 = matchOverlayColor and currentAccent or Color3.fromRGB(45, 45, 45)
     matchStatsButton.BackgroundColor3 = matchStatsColor and currentAccent or Color3.fromRGB(45, 45, 45)
+    keysScaleSliderFill.BackgroundColor3 = currentAccent
     
     if matchStatsColor then
         fpsTextLabel.TextColor3 = currentMenuColor
@@ -634,9 +557,7 @@ local function updateUIColors()
     speedSliderFill.BackgroundColor3 = currentAccent
     transFill.BackgroundColor3 = currentAccent
 end
-
 updateUIColors()
-
 --------------------------------------------
 -- 5. ЛОГИКА И ИНТЕРАКТИВ
 --------------------------------------------
@@ -646,7 +567,6 @@ local introTween = TweenService:Create(frame, introTweenInfo, {
     BackgroundTransparency = 0.25
 })
 introTween:Play()
-
 -- Драг главного меню
 local dragging, dragStart, startPos = false, nil, nil
 dragBar.InputBegan:Connect(function(input)
@@ -656,18 +576,15 @@ dragBar.InputBegan:Connect(function(input)
         startPos = frame.Position
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
         frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
-
 -- Сворачивание
 local originalSize = UDim2.new(0, 215, 0, 145)
 minimizeButton.MouseButton1Click:Connect(function()
@@ -690,7 +607,6 @@ minimizeButton.MouseButton1Click:Connect(function()
     settingsButton.Visible = not isMinimized
     waterMark.Visible = not isMinimized
 end)
-
 -- Навигация вкладок
 local function resetTabs()
     mainContainer.Visible = false
@@ -706,35 +622,30 @@ local function resetTabs()
     settingsButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     settingsButton.TextColor3 = Color3.fromRGB(180, 180, 180)
 end
-
 mainTabButton.MouseButton1Click:Connect(function()
     resetTabs()
     mainContainer.Visible = true
     mainTabButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
     mainTabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 end)
-
 tpTabButton.MouseButton1Click:Connect(function()
     resetTabs()
     tpContainer.Visible = true
     tpTabButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
     tpTabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 end)
-
 visualTabButton.MouseButton1Click:Connect(function()
     resetTabs()
     visualContainer.Visible = true
     visualTabButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
     visualTabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 end)
-
 settingsButton.MouseButton1Click:Connect(function()
     resetTabs()
     settingsContainer.Visible = true
     settingsButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
     settingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 end)
-
 --------------------------------------------
 -- ЛОГИКА ОВЕРЛЕЕВ (FPS И KEYSTROKES)
 --------------------------------------------
@@ -744,7 +655,6 @@ fpsToggleButton.MouseButton1Click:Connect(function()
     fpsTextLabel.Visible = fpsEnabled
     updateUIColors()
 end)
-
 -- Переключатель Кейборда
 keysToggleButton.MouseButton1Click:Connect(function()
     keystrokesEnabled = not keystrokesEnabled
@@ -752,7 +662,11 @@ keysToggleButton.MouseButton1Click:Connect(function()
     keysFrame.Visible = keystrokesEnabled
     updateUIColors()
 end)
-
+matchOverlayButton.MouseButton1Click:Connect(function()
+    matchOverlayColor = not matchOverlayColor
+    matchOverlayButton.Text = "Match Menu Color: " .. (matchOverlayColor and "ON" or "OFF")
+    updateUIColors()
+end)
 -- Драг для FPS
 local fpsOverlayDragging, fpsOverlayDragStart, fpsOverlayStartPos = false, nil, nil
 fpsTextLabel.InputBegan:Connect(function(input)
@@ -771,7 +685,6 @@ end)
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then fpsOverlayDragging = false end
 end)
-
 -- Драг для Кейборд-Оверлея
 local keysDragging, keysDragStart, keysStartPos = false, nil, nil
 keysFrame.InputBegan:Connect(function(input)
@@ -790,7 +703,6 @@ end)
 keysFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then keysDragging = false end
 end)
-
 -- Ползунок FPS Size
 local fpsSizeDragging = false
 local function updateFpsSizeSlider(input)
@@ -804,7 +716,6 @@ local function updateFpsSizeSlider(input)
     fpsTextLabel.TextSize = newSize
     fpsSizeSliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
 end
-
 fpsSizeSliderFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         fpsSizeDragging = true
@@ -819,21 +730,46 @@ end)
 fpsSizeSliderFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then fpsSizeDragging = false end
 end)
-
+-- Ползунок Keys Scale
+local keysScaleDragging = false
+local function updateKeysScale(input)
+    local sliderSize = keysScaleSliderFrame.AbsoluteSize.X
+    local sliderPos = keysScaleSliderFrame.AbsolutePosition.X
+    local mouseX = input.Position.X
+    local relativeX = math.clamp((mouseX - sliderPos) / sliderSize, 0, 1)
+    keysScale = 0.5 + (relativeX * 2.5)
+    keysScaleLabel.Text = "Keys Scale: " .. string.format("%.1f", keysScale) .. "x"
+    keysScaleSliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
+    applyKeysScale()
+end
+keysScaleSliderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        keysScaleDragging = true
+        updateKeysScale(input)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if keysScaleDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateKeysScale(input)
+    end
+end)
+keysScaleSliderFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then keysScaleDragging = false end
+end)
 --------------------------------------------
 -- ПОДСВЕТКА КЛАВИШ ПРИ НАЖАТИИ
 --------------------------------------------
 local function tweenTileColor(tile, isPressed)
-    local targetColor = isPressed and (matchMenuColor and currentMenuColor or accentColor) or Color3.fromRGB(30, 30, 30)
-    local targetTextSize = isPressed and 10 or 12
-    if tile.Name == "Space" then targetTextSize = 8 end
+    local themeColor = matchOverlayColor and currentMenuColor or accentColor
+    local targetColor = isPressed and themeColor or Color3.fromRGB(30, 30, 30)
+    local targetTextSize = isPressed and (8 * keysScale) or (12 * keysScale)
+    if tile.Name == "Space" then targetTextSize = 8 * keysScale end
     
     TweenService:Create(tile, TweenInfo.new(0.1), {
         BackgroundColor3 = targetColor,
         TextSize = targetTextSize
     }):Play()
 end
-
 UserInputService.InputBegan:Connect(function(input)
     if not keystrokesEnabled then return end
     if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -849,7 +785,6 @@ UserInputService.InputBegan:Connect(function(input)
         tweenTileColor(tileRMB, true)
     end
 end)
-
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Keyboard then
         if input.KeyCode == Enum.KeyCode.W then tweenTileColor(tileW, false)
@@ -864,7 +799,6 @@ UserInputService.InputEnded:Connect(function(input)
         tweenTileColor(tileRMB, false)
     end
 end)
-
 --------------------------------------------
 -- НАСТРОЙКИ (ЦВЕТ / ТРАНСПАРЕНСИ)
 --------------------------------------------
@@ -873,7 +807,6 @@ matchStatsButton.MouseButton1Click:Connect(function()
     matchStatsButton.Text = "Match Menu Color: " .. (matchStatsColor and "ON" or "OFF")
     updateUIColors()
 end)
-
 local cpDragging = false
 local function updateColorFromPicker(input)
     local cpSize = colorPickerFrame.AbsoluteSize
@@ -885,7 +818,6 @@ local function updateColorFromPicker(input)
     currentMenuColor = Color3.fromHSV(relativeX, 1, 1 - (relativeY * 0.85))
     updateUIColors()
 end
-
 colorPickerFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then cpDragging = true updateColorFromPicker(input) end
 end)
@@ -895,7 +827,6 @@ end)
 colorPickerFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then cpDragging = false end
 end)
-
 local transDragging = false
 local function updateTransparencySlider(input)
     local sliderSize = transSliderFrame.AbsoluteSize.X
@@ -906,7 +837,6 @@ local function updateTransparencySlider(input)
     transFill.Size = UDim2.new(relativeX, 0, 1, 0)
     updateUIColors()
 end
-
 transSliderFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then transDragging = true updateTransparencySlider(input) end
 end)
@@ -916,14 +846,12 @@ end)
 transSliderFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then transDragging = false end
 end)
-
 matchToggle.MouseButton1Click:Connect(function()
     matchMenuColor = not matchMenuColor
     matchToggle.Text = "Match Menu Color: " .. (matchMenuColor and "ON" or "OFF")
     matchToggle.BackgroundColor3 = matchMenuColor and Color3.fromRGB(55, 90, 55) or Color3.fromRGB(45, 45, 45)
     updateUIColors()
 end)
-
 --------------------------------------------
 -- ЛОГИКА ТЕЛЕПОРТА
 --------------------------------------------
@@ -943,7 +871,6 @@ local function updatePlayerList()
             pBtn.TextSize = 11
             pBtn.Parent = tpContainer
             Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
-
             pBtn.MouseEnter:Connect(function() pBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60) end)
             pBtn.MouseLeave:Connect(function() pBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45) end)
             pBtn.MouseButton1Click:Connect(function()
@@ -960,7 +887,6 @@ local function updatePlayerList()
 end
 Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoving:Connect(updatePlayerList)
-
 --------------------------------------------
 -- СЧЕТЧИК FPS
 --------------------------------------------
@@ -976,7 +902,6 @@ RunService.RenderStepped:Connect(function()
         lastFpsUpdateTime = currentTime
     end
 end)
-
 --------------------------------------------
 -- ФУНКЦИОНАЛ FLY И NOCLIP
 --------------------------------------------
@@ -985,7 +910,6 @@ local bodyVelocity = nil
 local bodyGyro = nil
 local moveDirection = Vector3.new(0, 0, 0)
 local NoclipConnection = nil
-
 function startFlying()
     if not isFlying and rootPart and humanoid then
         isFlying = true
@@ -998,14 +922,12 @@ function startFlying()
         bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
         bodyVelocity.Velocity = Vector3.new(0, 0, 0)
         bodyVelocity.Parent = rootPart
-
         bodyGyro = Instance.new("BodyGyro")
         bodyGyro.MaxTorque = Vector3.new(4000, 4000, 4000)
         bodyGyro.CFrame = camera.CFrame
         bodyGyro.Parent = rootPart
     end
 end
-
 function stopFlying()
     if isFlying then
         isFlying = false
@@ -1016,9 +938,7 @@ function stopFlying()
         if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
     end
 end
-
 local function toggleFly() if isFlying then stopFlying() else startFlying() end end
-
 local function noclipLoop()
     if Clip == false and character then
         for _, v in pairs(character:GetDescendants()) do
@@ -1026,14 +946,12 @@ local function noclipLoop()
         end
     end
 end
-
 local function startNoclip()
     Clip = false
     noClipButton.Text = "No-Clip: ON [" .. noclipKey.Name .. "]"
     updateUIColors()
     NoclipConnection = RunService.Stepped:Connect(noclipLoop)
 end
-
 local function stopNoclip()
     Clip = true
     if NoclipConnection then NoclipConnection:Disconnect() end
@@ -1046,12 +964,9 @@ local function stopNoclip()
         if rootPart then rootPart.CFrame = rootPart.CFrame * CFrame.new(0, 0.1, 0) end
     end
 end
-
 local function toggleNoClip() if Clip then startNoclip() else stopNoclip() end end
-
 flyButton.MouseButton1Click:Connect(toggleFly)
 noClipButton.MouseButton1Click:Connect(toggleNoClip)
-
 -- Слайдер скорости
 local speedSliderDragging = false
 local function updateSpeedSlider(input)
@@ -1062,7 +977,6 @@ local function updateSpeedSlider(input)
     speedLabel.Text = "Speed: " .. math.floor(flySpeed)
     speedSliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
 end
-
 speedSliderFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then speedSliderDragging = true updateSpeedSlider(input) end
 end)
@@ -1072,22 +986,18 @@ end)
 speedSliderFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then speedSliderDragging = false end
 end)
-
 --------------------------------------------
 -- ОБРАБОТКА ХОТКЕЕВ И БИНДОВ
 --------------------------------------------
 local inputStates = {W = false, S = false, A = false, D = false, Space = false, LeftShift = false}
-
 flyBindButton.MouseButton1Click:Connect(function()
     isListeningFly = true isListeningNoclip = false
     flyBindButton.Text = "Bind Fly: ...Жми кнопку..."
 end)
-
 noclipBindButton.MouseButton1Click:Connect(function()
     isListeningNoclip = true isListeningFly = false
     noclipBindButton.Text = "Bind Noclip: ...Жми кнопку..."
 end)
-
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if isListeningFly then
         if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -1105,12 +1015,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
         return
     end
-
     if gameProcessed then return end
     
     if input.KeyCode == flyKey then toggleFly()
     elseif input.KeyCode == noclipKey then toggleNoClip() end
-
     if isFlying then
         if input.KeyCode == Enum.KeyCode.W then inputStates.W = true
         elseif input.KeyCode == Enum.KeyCode.S then inputStates.S = true
@@ -1121,7 +1029,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
     end
 end)
-
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.W then inputStates.W = false
     elseif input.KeyCode == Enum.KeyCode.S then inputStates.S = false
@@ -1131,7 +1038,6 @@ UserInputService.InputEnded:Connect(function(input)
     elseif input.KeyCode == Enum.KeyCode.LeftShift then inputStates.LeftShift = false
     end
 end)
-
 RunService.Heartbeat:Connect(function()
     if isFlying and bodyVelocity and bodyGyro and camera then
         bodyGyro.CFrame = camera.CFrame
