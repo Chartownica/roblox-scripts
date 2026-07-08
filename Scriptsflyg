@@ -30,8 +30,14 @@ local accentColor = Color3.fromRGB(100, 100, 255)
 local menuTransparency = 0.25
 local flyKey = Enum.KeyCode.F
 local noclipKey = Enum.KeyCode.N
+local hideGuiKey = Enum.KeyCode.RightAlt
+local dashKey = Enum.KeyCode.Return
 local isListeningFly = false
 local isListeningNoclip = false
+local isListeningHideGui = false
+local isListeningDash = false
+local guiVisible = true
+local dashDistance = 20
 -- Визуалы
 local fpsEnabled = false
 local fpsCurrentSize = 14
@@ -309,7 +315,7 @@ settingsContainer.BackgroundTransparency = 1
 settingsContainer.Visible = false
 settingsContainer.ScrollBarThickness = 2
 settingsContainer.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 90)
-settingsContainer.CanvasSize = UDim2.new(0, 0, 0, 300)
+settingsContainer.CanvasSize = UDim2.new(0, 0, 0, 550)
 settingsContainer.Parent = frame
 local settingsLayout = Instance.new("UIListLayout")
 settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -431,13 +437,65 @@ noclipBindButton.TextSize = 11
 noclipBindButton.LayoutOrder = 7
 noclipBindButton.Parent = settingsContainer
 Instance.new("UICorner", noclipBindButton).CornerRadius = UDim.new(0, 4)
+local hideGuiBindButton = Instance.new("TextButton")
+hideGuiBindButton.Size = UDim2.new(1, -5, 0, 24)
+hideGuiBindButton.Text = "Bind Hide GUI: " .. hideGuiKey.Name
+hideGuiBindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+hideGuiBindButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+hideGuiBindButton.TextSize = 11
+hideGuiBindButton.LayoutOrder = 8
+hideGuiBindButton.Parent = settingsContainer
+Instance.new("UICorner", hideGuiBindButton).CornerRadius = UDim.new(0, 4)
+local dashBindLabel = Instance.new("TextLabel")
+dashBindLabel.Size = UDim2.new(1, 0, 0, 14)
+dashBindLabel.Text = "Dash Teleport Settings:"
+dashBindLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+dashBindLabel.TextSize = 11
+dashBindLabel.Font = Enum.Font.SourceSansBold
+dashBindLabel.TextXAlignment = Enum.TextXAlignment.Left
+dashBindLabel.BackgroundTransparency = 1
+dashBindLabel.LayoutOrder = 10
+dashBindLabel.Parent = settingsContainer
+local dashBindButton = Instance.new("TextButton")
+dashBindButton.Size = UDim2.new(1, -5, 0, 24)
+dashBindButton.Text = "Bind Dash: " .. dashKey.Name
+dashBindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+dashBindButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+dashBindButton.TextSize = 11
+dashBindButton.LayoutOrder = 11
+dashBindButton.Parent = settingsContainer
+Instance.new("UICorner", dashBindButton).CornerRadius = UDim.new(0, 4)
+local dashDistanceContainer = Instance.new("Frame")
+dashDistanceContainer.Size = UDim2.new(1, 0, 0, 30)
+dashDistanceContainer.BackgroundTransparency = 1
+dashDistanceContainer.LayoutOrder = 12
+dashDistanceContainer.Parent = settingsContainer
+local dashDistanceLabel = Instance.new("TextLabel")
+dashDistanceLabel.Size = UDim2.new(1, 0, 0, 12)
+dashDistanceLabel.Text = "Dash Distance: 20 studs"
+dashDistanceLabel.BackgroundTransparency = 1
+dashDistanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+dashDistanceLabel.TextSize = 11
+dashDistanceLabel.TextXAlignment = Enum.TextXAlignment.Left
+dashDistanceLabel.Parent = dashDistanceContainer
+local dashDistanceSliderFrame = Instance.new("Frame")
+dashDistanceSliderFrame.Size = UDim2.new(1, 0, 0, 6)
+dashDistanceSliderFrame.Position = UDim2.new(0, 0, 0, 16)
+dashDistanceSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+dashDistanceSliderFrame.Parent = dashDistanceContainer
+Instance.new("UICorner", dashDistanceSliderFrame).CornerRadius = UDim.new(0, 3)
+local dashDistanceSliderFill = Instance.new("Frame")
+dashDistanceSliderFill.Size = UDim2.new(0.2, 0, 1, 0)
+dashDistanceSliderFill.BackgroundColor3 = accentColor
+dashDistanceSliderFill.Parent = dashDistanceSliderFrame
+Instance.new("UICorner", dashDistanceSliderFill).CornerRadius = UDim.new(0, 3)
 local infoText = Instance.new("TextLabel")
 infoText.Size = UDim2.new(1, 0, 0, 30)
 infoText.Text = "Change bindings by clicking buttons above."
 infoText.TextColor3 = Color3.fromRGB(140, 140, 140)
 infoText.TextSize = 11
 infoText.BackgroundTransparency = 1
-infoText.LayoutOrder = 8
+infoText.LayoutOrder = 13
 infoText.Parent = settingsContainer
 --------------------------------------------
 -- 3. СОЗДАНИЕ ВНЕШНИХ ОВЕРЛЕЕВ (FPS)
@@ -556,6 +614,7 @@ local function updateUIColors()
     
     speedSliderFill.BackgroundColor3 = currentAccent
     transFill.BackgroundColor3 = currentAccent
+    dashDistanceSliderFill.BackgroundColor3 = currentAccent
 end
 updateUIColors()
 --------------------------------------------
@@ -800,7 +859,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 --------------------------------------------
--- НАСТРОЙКИ (ЦВЕТ / ТРАНСПАРЕНСИ)
+-- НАСТРОЙКИ (ЦВЕТ / ТРАНСПАРЕНС)
 --------------------------------------------
 matchStatsButton.MouseButton1Click:Connect(function()
     matchStatsColor = not matchStatsColor
@@ -851,6 +910,35 @@ matchToggle.MouseButton1Click:Connect(function()
     matchToggle.Text = "Match Menu Color: " .. (matchMenuColor and "ON" or "OFF")
     matchToggle.BackgroundColor3 = matchMenuColor and Color3.fromRGB(55, 90, 55) or Color3.fromRGB(45, 45, 45)
     updateUIColors()
+end)
+--------------------------------------------
+-- СЛАЙДЕР ДИСТАНЦИИ ДАША
+--------------------------------------------
+local dashDistanceDragging = false
+local function updateDashDistanceSlider(input)
+    local sliderSize = dashDistanceSliderFrame.AbsoluteSize.X
+    local sliderPos = dashDistanceSliderFrame.AbsolutePosition.X
+    local mouseX = input.Position.X
+    local relativeX = math.clamp((mouseX - sliderPos) / sliderSize, 0, 1)
+    dashDistance = 5 + relativeX * 95
+    dashDistanceLabel.Text = "Dash Distance: " .. math.floor(dashDistance) .. " studs"
+    dashDistanceSliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
+end
+dashDistanceSliderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dashDistanceDragging = true
+        updateDashDistanceSlider(input)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dashDistanceDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateDashDistanceSlider(input)
+    end
+end)
+dashDistanceSliderFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dashDistanceDragging = false
+    end
 end)
 --------------------------------------------
 -- ЛОГИКА ТЕЛЕПОРТА
@@ -987,21 +1075,126 @@ speedSliderFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then speedSliderDragging = false end
 end)
 --------------------------------------------
+-- ФУНКЦИЯ ДАША (ТЕЛЕПОРТ ВПЕРЁД)
+--------------------------------------------
+function dashForward()
+    if not rootPart or not character then return end
+    if not rootPart:IsDescendantOf(workspace) then return end
+    
+    local cameraCFrame = camera.CFrame
+    local lookVector = cameraCFrame.LookVector
+    lookVector = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+    
+    if lookVector.Magnitude < 0.01 then
+        lookVector = Vector3.new(0, 0, -1)
+    end
+    
+    local targetPos = rootPart.Position + (lookVector * dashDistance)
+    
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    params.FilterDescendantsInstances = {character}
+    
+    local rayOrigin = rootPart.Position + Vector3.new(0, 1, 0)
+    local rayDirection = lookVector * dashDistance
+    local rayResult = workspace:Raycast(rayOrigin, rayDirection, params)
+    
+    if rayResult then
+        local distance = (rayOrigin - rayResult.Position).Magnitude
+        if distance > 2 then
+            targetPos = rayResult.Position + (lookVector * 1.5)
+            targetPos = targetPos + Vector3.new(0, 1, 0)
+        else
+            targetPos = rootPart.Position + (lookVector * 1.5)
+        end
+    end
+    
+    local wasFlying = isFlying
+    if isFlying then stopFlying() end
+    
+    local newCFrame = CFrame.new(targetPos)
+    
+    local tweenInfo = TweenInfo.new(
+        0.12,
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out
+    )
+    local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = newCFrame})
+    tween:Play()
+    tween.Completed:Wait()
+    
+    if wasFlying then
+        task.wait(0.05)
+        startFlying()
+    end
+end
+--------------------------------------------
+-- ФУНКЦИЯ СКРЫТИЯ GUI
+--------------------------------------------
+function toggleGuiVisibility()
+    guiVisible = not guiVisible
+    if guiVisible then
+        frame.Visible = true
+        TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundTransparency = menuTransparency,
+            Size = isMinimized and UDim2.new(0, frame.Size.X.Offset, 0, 30) or UDim2.new(0, 215, 0, 145)
+        }):Play()
+        mainContainer.Visible = not isMinimized and mainContainer.Visible
+        tpContainer.Visible = not isMinimized and tpContainer.Visible
+        visualContainer.Visible = not isMinimized and visualContainer.Visible
+        settingsContainer.Visible = not isMinimized and settingsContainer.Visible
+        dragBar.Visible = not isMinimized
+        mainTabButton.Visible = not isMinimized
+        tpTabButton.Visible = not isMinimized
+        visualTabButton.Visible = not isMinimized
+        settingsButton.Visible = not isMinimized
+        waterMark.Visible = not isMinimized
+    else
+        TweenService:Create(frame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 0, 0, 0)
+        }):Play()
+        task.wait(0.15)
+        frame.Visible = false
+    end
+end
+--------------------------------------------
 -- ОБРАБОТКА ХОТКЕЕВ И БИНДОВ
 --------------------------------------------
 local inputStates = {W = false, S = false, A = false, D = false, Space = false, LeftShift = false}
 flyBindButton.MouseButton1Click:Connect(function()
-    isListeningFly = true isListeningNoclip = false
+    isListeningFly = true
+    isListeningNoclip = false
+    isListeningHideGui = false
+    isListeningDash = false
     flyBindButton.Text = "Bind Fly: ...Жми кнопку..."
 end)
 noclipBindButton.MouseButton1Click:Connect(function()
-    isListeningNoclip = true isListeningFly = false
+    isListeningNoclip = true
+    isListeningFly = false
+    isListeningHideGui = false
+    isListeningDash = false
     noclipBindButton.Text = "Bind Noclip: ...Жми кнопку..."
+end)
+hideGuiBindButton.MouseButton1Click:Connect(function()
+    isListeningHideGui = true
+    isListeningFly = false
+    isListeningNoclip = false
+    isListeningDash = false
+    hideGuiBindButton.Text = "Bind Hide GUI: ...Жми кнопку..."
+end)
+dashBindButton.MouseButton1Click:Connect(function()
+    isListeningDash = true
+    isListeningFly = false
+    isListeningNoclip = false
+    isListeningHideGui = false
+    dashBindButton.Text = "Bind Dash: ...Жми кнопку..."
 end)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if isListeningFly then
         if input.UserInputType == Enum.UserInputType.Keyboard then
-            flyKey = input.KeyCode isListeningFly = false
+            flyKey = input.KeyCode
+            isListeningFly = false
             flyBindButton.Text = "Bind Fly: " .. flyKey.Name
             flyButton.Text = (isFlying and "Fly: ON [" or "Fly: OFF [") .. flyKey.Name .. "]"
         end
@@ -1009,16 +1202,40 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
     if isListeningNoclip then
         if input.UserInputType == Enum.UserInputType.Keyboard then
-            noclipKey = input.KeyCode isListeningNoclip = false
+            noclipKey = input.KeyCode
+            isListeningNoclip = false
             noclipBindButton.Text = "Bind Noclip: " .. noclipKey.Name
             noClipButton.Text = (not Clip and "No-Clip: ON [" or "No-Clip: OFF [") .. noclipKey.Name .. "]"
         end
         return
     end
+    if isListeningHideGui then
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            hideGuiKey = input.KeyCode
+            isListeningHideGui = false
+            hideGuiBindButton.Text = "Bind Hide GUI: " .. hideGuiKey.Name
+        end
+        return
+    end
+    if isListeningDash then
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            dashKey = input.KeyCode
+            isListeningDash = false
+            dashBindButton.Text = "Bind Dash: " .. dashKey.Name
+        end
+        return
+    end
     if gameProcessed then return end
     
-    if input.KeyCode == flyKey then toggleFly()
-    elseif input.KeyCode == noclipKey then toggleNoClip() end
+    if input.KeyCode == flyKey then
+        toggleFly()
+    elseif input.KeyCode == noclipKey then
+        toggleNoClip()
+    elseif input.KeyCode == hideGuiKey then
+        toggleGuiVisibility()
+    elseif input.KeyCode == dashKey then
+        dashForward()
+    end
     if isFlying then
         if input.KeyCode == Enum.KeyCode.W then inputStates.W = true
         elseif input.KeyCode == Enum.KeyCode.S then inputStates.S = true
